@@ -1,0 +1,27 @@
+#!/usr/bin/env python3
+import re
+import os
+
+import Adafruit_DHT
+
+from google.cloud import bigquery
+
+dataset_id = 'sensor'
+table_id = 'data'
+REGEX_NUMBER = re.compile(r'(\d+\.\d+|\d*\.\d+|\d+)')
+
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/usr/local/share/google-cloud/service-accounts/sensor.json'
+
+client = bigquery.Client(project='admin-project-267210')
+
+dataset_ref = client.dataset(dataset_id)
+table_ref = dataset_ref.table(table_id)
+table = client.get_table(table_ref)
+
+humidity, temperature = Adafruit_DHT.read_retry(Adafruit_DHT.DHT11, 4)
+
+record = float(REGEX_NUMBER.search(str(humidity)).group(1)), float(REGEX_NUMBER.search(str(temperature)).group(1))
+
+errors = client.insert_rows(table, [record])
+
+assert errors == [], f'errors occurred {", ".join((str(type(e)) + " " + str(e) for e in errors))}'
