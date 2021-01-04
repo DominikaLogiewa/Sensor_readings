@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-
+import soil_moisture
 import re
 import os
 from datetime import datetime
 from dateutil import tz
 import Adafruit_DHT
-
+import time
 from google.cloud import bigquery
 
 dataset_id = 'sensor'
@@ -40,11 +40,15 @@ for i in range(6):
 
 humidity = float(humidity/6)
 temperature = float(temperature/6)
-record = float(REGEX_NUMBER.search(str(humidity)).group(1)), float(REGEX_NUMBER.search(str(temperature)).group(1)), float(REGEX_NUMBER.search(str(timestamp)).group(1))
+record = (
+	float(REGEX_NUMBER.search(str(humidity)).group(1)), 
+	float(REGEX_NUMBER.search(str(temperature)).group(1)), 
+	float(REGEX_NUMBER.search(str(timestamp)).group(1)),
+	float(REGEX_NUMBER.search(str(soil_moisture.soil_moisture())).group(1))
+)
 
 errors = client.insert_rows(table, [record])
 
 assert errors == [], f'errors occurred {", ".join((str(type(e)) + " " + str(e) for e in errors))}'
 print(now)
-
 
